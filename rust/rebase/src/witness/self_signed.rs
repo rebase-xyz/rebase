@@ -1,18 +1,15 @@
 use crate::schema::schema_type::{SchemaError, SchemaType};
-use crate::signer::signer::{SignerType, DID as SignerDID};
+use crate::signer::signer::SignerType;
+use crate::soc_media::key_to_key_link::KeyToKeyLink as KTKL;
 use crate::witness::{signer_type::SignerTypes, witness::WitnessError};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use ssi::{one_or_many::OneOrMany, vc::Evidence};
 
-#[derive(Clone, Deserialize, Serialize)]
-pub struct Opts {
-    pub key_1: SignerDID,
-    pub key_2: SignerDID,
-}
+pub type KeyToKeyLink = KTKL;
 
-impl Opts {
-    pub fn generate_statement(&self) -> Result<String, WitnessError> {
+impl KeyToKeyLink {
+    pub fn generate_self_signed(&self) -> Result<String, WitnessError> {
         let key_1 = SignerTypes::new(&self.key_1)?;
         let key_2 = SignerTypes::new(&self.key_2)?;
         Ok(format!(
@@ -27,7 +24,7 @@ impl Opts {
 
 #[derive(Deserialize, Serialize)]
 pub struct Claim {
-    pub statement_opts: Opts,
+    pub statement_opts: KeyToKeyLink,
     pub signature_1: String,
     pub signature_2: String,
 }
@@ -68,7 +65,7 @@ impl SchemaType for Claim {
 
         evidence_map.insert(
             "statement".to_string(),
-            serde_json::Value::String(self.statement_opts.generate_statement().map_err(|e| {
+            serde_json::Value::String(self.statement_opts.generate_self_signed().map_err(|e| {
                 SchemaError::BadSubject(format!("could not format statement: {}", e))
             })?),
         );
@@ -101,11 +98,11 @@ impl SchemaType for Claim {
 
 impl Claim {
     pub async fn new(
-        opts: Opts,
+        opts: KeyToKeyLink,
         signature_1: String,
         signature_2: String,
     ) -> Result<Self, WitnessError> {
-        let statement = opts.generate_statement()?;
+        let statement = opts.generate_self_signed()?;
         let key_1 = SignerTypes::new(&opts.key_1)?;
         let key_2 = SignerTypes::new(&opts.key_2)?;
         key_1.valid_signature(&statement, &signature_1).await?;
@@ -185,6 +182,7 @@ impl Claim {
 mod tests {
     use super::*;
     use crate::signer::ed25519::Ed25519;
+    use crate::signer::signer::DID;
     use crate::util::util::{
         test_ed25519_did, test_ed25519_did_2, test_eth_did, test_eth_did_2, test_witness_signature,
         TestKey, TestWitness, TEST_2KEY_ED25519_SIG_1, TEST_2KEY_ED25519_SIG_2,
@@ -192,14 +190,14 @@ mod tests {
     };
 
     async fn mock_proof(
-        key_1: fn() -> SignerDID,
-        key_2: fn() -> SignerDID,
+        key_1: fn() -> DID,
+        key_2: fn() -> DID,
         sig_1: &str,
         sig_2: &str,
     ) -> Result<Claim, WitnessError> {
         Claim::new(
             // TODO: Make test util
-            Opts {
+            KeyToKeyLink {
                 key_1: key_1(),
                 key_2: key_2(),
             },

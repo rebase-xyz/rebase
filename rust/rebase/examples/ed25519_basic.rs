@@ -59,7 +59,7 @@ async fn main() {
     let subject_id = signer.did_id().unwrap();
 
     println!("About to get schema");
-    let schema = rebase::schema::basic_post::BasicPost {
+    let schema = rebase::soc_media::basic_post::BasicPost {
         title,
         body,
         subject_id,

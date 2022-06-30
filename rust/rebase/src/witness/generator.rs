@@ -6,6 +6,7 @@ use crate::{
         github::ClaimGenerator as GithubGen,
         proof_type::ProofTypes,
         self_signed::Claim as SelfSignedClaim,
+        soc_media::follow::Claim as FollowClaim,
         twitter::ClaimGenerator as TwitterGen,
         witness::{Generator, WitnessError},
     },
@@ -43,6 +44,13 @@ impl WitnessGenerator {
     ) -> Result<Credential, WitnessError> {
         match proof {
             ProofTypes::Dns(x) => self.dns.credential(x, signer).await,
+            ProofTypes::Follow(x) => {
+                let claim = FollowClaim::new(x.statement_opts.clone(), x.signature.clone()).await?;
+                claim
+                    .credential(signer)
+                    .await
+                    .map_err(|e| WitnessError::SchemaError(e))
+            }
             ProofTypes::SelfSigned(x) => {
                 // Validates inner signature by creating
                 let claim = SelfSignedClaim::new(
@@ -79,6 +87,19 @@ impl WitnessGenerator {
     ) -> Result<String, WitnessError> {
         match proof {
             ProofTypes::Dns(x) => self.dns.jwt(x, signer).await,
+            ProofTypes::Follow(x) => {
+                // Validates inner signature by creating
+                let claim = FollowClaim::new(
+                    x.statement_opts.clone(),
+                    x.signature.clone(),
+                )
+                .await?;
+
+                claim
+                    .jwt(signer)
+                    .await
+                    .map_err(|e| WitnessError::SchemaError(e))
+            }
             ProofTypes::SelfSigned(x) => {
                 // Validates inner signature by creating
                 let claim = SelfSignedClaim::new(

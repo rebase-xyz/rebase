@@ -71,16 +71,16 @@ pub enum DID {
 }
 
 impl DID {
-    pub fn context(&self) -> serde_json::Value {
+    pub fn did(&self) -> Result<String, SignerError> {
         match &self {
-            DID::PKH(_) => serde_json::json!({
-                "PKH": {
-                    "address": "https://example.com/address",
-                    "chain_id": "https://example.com/chain_id"
-                },
-            }),
-            DID::Web(_) => serde_json::json!({
-                "Web": "https://example.com/did_web",
+            DID::PKH(PKH::EIP155(Some(eip155))) => Ok(format!(
+                "did:pkh:eip155:{}:{}",
+                eip155.chain_id, eip155.address
+            )),
+            DID::Web(Some(url)) => Ok(url.clone()),
+            _ => Err(SignerError::InvalidSignerOpts {
+                signer_type: "none".to_string(),
+                reason: "no id set".to_string(),
             }),
         }
     }
