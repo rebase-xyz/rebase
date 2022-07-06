@@ -68,8 +68,6 @@ pub async fn statement(req: String) -> Promise {
 #[derive(Deserialize, Serialize)]
 pub struct WitnessReq {
     pub proof: ProofTypes,
-    // TODO: Change to an opts for WitnessGenerator.
-    // pub twitter_api_key: Option<String>,
 }
 
 #[derive(Deserialize, Serialize)]
