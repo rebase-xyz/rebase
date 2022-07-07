@@ -1848,6 +1848,7 @@ dependencies = [
  "js-sys",
  "log",
  "rebase",
+ "rebase_witness_sdk",
  "serde",
  "serde_json",
  "ssi",
@@ -1856,6 +1857,18 @@ dependencies = [
  "wasm-bindgen-test",
  "web-sys",
  "wee_alloc",
+]
+
+[[package]]
+name = "rebase_witness_sdk"
+version = "0.1.0"
+dependencies = [
+ "rebase",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "url",
 ]
 
 [[package]]
